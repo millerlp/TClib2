@@ -1,5 +1,6 @@
 /* TClib2.cpp
-
+	A set of functions used with my Thermocouple_datalogger_2 project
+	on RevA hardware (ATmega328p)
 	Luke Miller June 2017
 
 */
@@ -221,7 +222,7 @@ void initFileName(SdFat& sd, SdFile& logfile, DateTime time1, char *filename) {
 // Supply a current DateTime time value. 
 // This function returns a DateTime value that can be used to show the 
 // current time when returning from this function. 
-DateTime startTIMER2(DateTime currTime, RTC_DS3231& rtc){
+DateTime startTIMER2(DateTime currTime, RTC_DS3231& rtc, byte SPS){
 	TIMSK2 = 0; // stop timer 2 interrupts
 
 	rtc.enable32kHz(true);
@@ -244,18 +245,16 @@ DateTime startTIMER2(DateTime currTime, RTC_DS3231& rtc){
 	//  TCCR2B = _BV(CS20) ; 
 	// prescaler clk/8 -- TCNT2 will overflow once every 0.0625 seconds (16Hz)
 	//  TCCR2B = _BV(CS21) ; 
-#if SAMPLES_PER_SECOND == 4
-	// prescaler clk/32 -- TCNT2 will overflow once every 0.25 seconds
-	TCCR2B = _BV(CS21) | _BV(CS20); 
-#endif
 
-#if SAMPLES_PER_SECOND == 2
-	TCCR2B = _BV(CS22) ; // prescaler clk/64 -- TCNT2 will overflow once every 0.5 seconds
-#endif
+	if (SPS == 4){
+		// prescaler clk/32 -- TCNT2 will overflow once every 0.25 seconds
+		TCCR2B = _BV(CS21) | _BV(CS20); 
+	} else if (SPS == 2) {
+		TCCR2B = _BV(CS22) ; // prescaler clk/64 -- TCNT2 will overflow once every 0.5 seconds
+	} else if (SPS == 1){
+		TCCR2B = _BV(CS22) | _BV(CS20); // prescaler clk/128 -- TCNT2 will overflow once every 1 seconds
+	}
 
-#if SAMPLES_PER_SECOND == 1
-    TCCR2B = _BV(CS22) | _BV(CS20); // prescaler clk/128 -- TCNT2 will overflow once every 1 seconds
-#endif
 
 	// Pause briefly to let the RTC roll over a new second
 	DateTime starttime = currTime;
@@ -275,3 +274,56 @@ DateTime startTIMER2(DateTime currTime, RTC_DS3231& rtc){
 	// of SAMPLES_PER_SECOND) regardless of whether the AVR is awake or asleep.
 	return currTime;
 }
+
+ 
+//-----------printTempToOLEDs--------------------------------------------------
+// Update temperature values on the 2 OLED screens. This function only updates
+// elements that have changed, and leaves the rest of the screen static. 
+void printTempToOLEDs (SSD1306AsciiWire& oled1, SSD1306AsciiWire& oled2, double *tempAverages, double *prevAverages){
+	// Print stuff to screens
+          oled1.home();
+          oled1.set2X();
+//          oled1.clearToEOL();
+          for (byte j = 0; j < 4; j++){
+            // Check to see if the value has changed and
+            // only update if it's changed, and check that the 
+			// new value isn't also NAN. 
+			if ( isnan(prevAverages[j]) & isnan(tempAverages[j]) ){
+				// If previous value was nan and current value
+				// value is also nan, no need to update
+				oled1.setRow(oled1.row()+2); // move to next row
+			} else if ( (tempAverages[j] != prevAverages[j]) & !isnan(prevAverages[j]) ){
+				// If old and new values don't match, and the previous value
+				// wasn't nan, then the display value needs to be updated
+              oled1.clear(60,128,oled1.row(),(oled1.row()+1));
+              oled1.print(tempAverages[j]);
+              oled1.println(F("C"));
+            } else {
+			   // If the two values match exactly, no update needed.
+              // Skip to next row. At 2x size, each row is 2units tall
+              oled1.setRow(oled1.row()+2);
+            }
+          }
+          oled2.home();
+          oled2.set2X();
+          for (byte j = 4; j < 8; j++){
+            // Check to see if the value has changed and
+            // only update if it's changed, and check that the 
+			// new value isn't also NAN. 
+			if ( isnan(prevAverages[j]) & isnan(tempAverages[j]) ){
+				// If previous value was nan and current value
+				// value is also nan, no need to update
+				oled2.setRow(oled2.row()+2); // move to next row
+			} else if ( (tempAverages[j] != prevAverages[j]) & !isnan(prevAverages[j]) ){
+				// If old and new values don't match, and the previous value
+				// wasn't nan, then the display value needs to be updated
+              oled2.clear(60,128,oled2.row(),(oled2.row()+1));
+              oled2.print(tempAverages[j]);
+              oled2.println(F("C"));
+            } else {
+			   // If the two values match exactly, no update needed.
+              // Skip to next row. At 2x size, each row is 2units tall
+              oled2.setRow(oled2.row()+2);
+            }
+          } 
+}  
