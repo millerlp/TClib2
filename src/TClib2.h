@@ -48,4 +48,7 @@ DateTime startTIMER2(DateTime currTime, RTC_DS3231& rtc, byte SPS);
 // elements that have changed, and leaves the rest of the screen static. 
 void printTempToOLEDs (SSD1306AsciiWire& oled1, SSD1306AsciiWire& oled2, double *tempAverages, double *prevAverages);
 
+// Apply temperature correction based on NIST curve fit
+double correctTemp(float rawTemp, float internalTemp);
+
 #endif
