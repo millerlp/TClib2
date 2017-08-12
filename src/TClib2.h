@@ -9,10 +9,12 @@
 #define TClib2_H
 
 #include <Arduino.h> // to get access to pinMode, digitalRead etc functions
+#include "EEPROM.h"	// built in Arduino library
 #include "SdFat.h"	// https://github.com/greiman/SdFat
 #include "RTClib.h" // https://github.com/millerlp/RTClib
 #include "SSD1306Ascii.h" // https://github.com/greiman/SSD1306Ascii
 #include "SSD1306AsciiWire.h" // https://github.com/greiman/SSD1306Ascii
+
 // Various additional libraries for access to sleep mode functions
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
@@ -50,5 +52,10 @@ void printTempToOLEDs (SSD1306AsciiWire& oled1, SSD1306AsciiWire& oled2, double 
 
 // Apply temperature correction based on NIST curve fit
 double correctTemp(float rawTemp, float internalTemp);
+
+// Utility functions to read/write float (decimal) values to EEPROM
+void EEPROM_WriteFloat(float *num, int MemPos);
+
+void EEPROM_ReadFloat(float *num, int MemPos);
 
 #endif

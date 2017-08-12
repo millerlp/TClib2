@@ -332,6 +332,7 @@ void printTempToOLEDs (SSD1306AsciiWire& oled1, SSD1306AsciiWire& oled2, double 
 //----------correctTemp-------------------------------
 // Apply NIST correction to MAX31855 temperatures. Based on code from
 // https://github.com/heypete/MAX31855-Linearization
+// This code isn't necessary when using MAX31856 chips
 double correctTemp(float rawTemp, float internalTemp){
 	       // Initialize variables.
        int i = 0; // Counter for arrays
@@ -426,3 +427,25 @@ double correctTemp(float rawTemp, float internalTemp){
 		  return correctedTemp;
 }
 
+//**********EEPROM_WriteFloat***************************
+// Function to write a float value (4 bytes) to EEPROM
+void EEPROM_WriteFloat(float *num, int MemPos)
+{
+ byte ByteArray[4];
+ memcpy(ByteArray, num, 4);
+ for(int x = 0; x < 4; x++)
+ {
+   EEPROM.write((MemPos * 4) + x, ByteArray[x]);
+ }  
+}
+//*********EEPROM_ReadFloat*********************************
+// Function to read back a float value (4 bytes) from EEPROM
+void EEPROM_ReadFloat(float *num, int MemPos)
+{
+ byte ByteArray[4];
+ for(int x = 0; x < 4; x++)
+ {
+   ByteArray[x] = EEPROM.read((MemPos * 4) + x);    
+ }
+ memcpy(num, ByteArray, 4);
+}
